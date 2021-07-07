@@ -30,7 +30,6 @@ niriss_NIS_x1024_y1024_f158m_predicted_0_0p00_0p00.fits
 niriss_NIS_x1024_y1024_f200w_predicted_0_0p00_0p00.fits
 occulting_spots_mask.fits
 scene_image.py
-stars_wdfield_combined_allfilters.list
 wfss_overlap_tool.py
 wfss_scene.py
 ```
