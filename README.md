@@ -1,7 +1,7 @@
 # wfss_overlap
 A tool to allow evaluation of which telescope orientation angles may cause spectral overlap in the NIRISS WFSS mode.
 
-The code requires a set of FITS files containing PSF and occulting spoy mask images.  These can be found on Box at
+The code requires a set of FITS files containing PSF and occulting spot mask images.  These can be found on Box at
 
 https://stsci.app.box.com/folder/140705149002
 
