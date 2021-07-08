@@ -199,6 +199,13 @@ class ImageGUI(Tk.Frame):
         self.zsmaxField.pack()
         try:
             zmin1, zmax1 = self.get_limits(self.image)
+            ratio = abs(zmax1/zmin1)
+            if ratio < 1.2:
+                if zmin1 < 0.:
+                    zmax1 = zmin1
+                    zmin1 = 3.*zmin1
+                else:
+                    zmax1 = 3.*zmin1
         except:
             zmin1 = 0.
             zmax1 = 1.

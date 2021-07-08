@@ -53,6 +53,10 @@ class WFSSOverlap(Tk.Frame):
         self.position = None
         self.imagewin = None
         self.last_type = None
+        self.siaf = True
+        for loop in range(len(sys.argv)):
+            if '--simple' in sys.argv[loop]:
+                self.siaf = False
         if parent is not None:
             # initialize the window and make the plot area.
             Tk.Frame.__init__(self, parent, args)
@@ -326,8 +330,7 @@ class WFSSOverlap(Tk.Frame):
 
         None
         """
-        if True:
-#        try:
+        try:
             background = float(self.background_entry.get())
             if background < 0.:
                 background = 0.
@@ -373,8 +376,10 @@ class WFSSOverlap(Tk.Frame):
                 position = self.mean_position(path+starname)
                 outstr = '%15.8f %15.8f' % (position[0], position[1])
                 general_utilities.put_value(outstr, self.position_entry)
+            simple = not self.siaf
             stars_image, star_list = scene_image.make_star_image(
-                path+starname, position, self.filtername, path=psf_path)
+                path+starname, position, self.filtername, path=psf_path,
+                simple=simple)
             if not stars_image is None:
                 general_utilities.put_message(
                     self.message_area, 
@@ -387,7 +392,8 @@ class WFSSOverlap(Tk.Frame):
                 return
             try:
                 galaxies_image = scene_image.make_galaxy_image(
-                    path+extname, position, self.filtername, path=psf_path)
+                    path+extname, position, self.filtername, path=psf_path,
+                    simple=simple)
             except:
                 galaxies_image = None
             if not galaxies_image is None:
@@ -397,10 +403,10 @@ class WFSSOverlap(Tk.Frame):
                 stars_image = stars_image+galaxies_image
             stars_image = stars_image+background
             self.scene_image = stars_image
-#        except:
-#            general_utilities.put_message(
-#                self.message_area, 
-#                'An error encountered making the scene image.\n')
+        except:
+            general_utilities.put_message(
+                self.message_area, 
+                'An error encountered making the scene image.\n')
 
 
     def save_scene(self):
