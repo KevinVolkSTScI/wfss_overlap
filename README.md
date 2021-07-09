@@ -22,6 +22,8 @@ f200w_gr150c_psfimage.fits
 f200w_gr150r_psfimage.fits
 fits_image_display.py
 general_utilities.py
+mpfit.py
+mpfitexpr.py
 niriss_NIS_x1024_y1024_f090w_predicted_0_0p00_0p00.fits
 niriss_NIS_x1024_y1024_f115w_predicted_0_0p00_0p00.fits
 niriss_NIS_x1024_y1024_f140m_predicted_0_0p00_0p00.fits
