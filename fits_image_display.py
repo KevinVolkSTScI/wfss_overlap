@@ -38,6 +38,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm
 import general_utilities
+import mpfitexpr
 
 class ImageGUI(Tk.Frame):
     """
@@ -809,11 +810,28 @@ class ImageGUI(Tk.Frame):
                 y0 = y1 - 5
             subim = numpy.copy(self.image[y0:y1, x0:x1])
             vector = numpy.mean(subim, axis=0)
+            print(vector)
             xvalues = numpy.arange(len(vector))+x0
+            print(xvalues)
+            ind = numpy.argmax(vector)
+            print(ind)
+            mind = numpy.argmin(vector)
+            start = numpy.asarray(
+                [xvalues[ind], vector[ind], 1., vector[mind]])
+            print(start)
+            params, yfit = mpfitexpr.mpfitexpr(
+                "p[3]+p[1]/numpy.exp((x-p[0])*(x-p[0])/(2.*p[2]*p[2]))",
+                xvalues, vector, vector*0.+1., start)
+            try:
+                str1 = 'Centre: %.3f\nPeak: %.2f\nSigma: %.2f\nBaseline: %.2f' % (
+                    params[0], params[1], params[2], params[3])
+                print(str1)
+            except:
+                pass
             tstring = 'Mean of lines %d:%d' % (y0, y1)
             self.plotxy(xvalues, vector, symbol='-', colour='blue',
                         xlabel='x pixel position', ylabel='Signal (ADU/s)',
-                        title=tstring)
+                        title=tstring, ymodel=yfit, fitparams=params)
             return
         if event.key == 'k':
             y0 = ypixel-10
@@ -1200,6 +1218,8 @@ class ImageGUI(Tk.Frame):
         colour = parameters.get("colour")
         sym = parameters.get("symbol")
         markersize = parameters.get("markersize")
+        ymodel = parameters.get("ymodel")
+        params = parameters.get("fitparams")
         if sym is None:
             sym='-'
         if colour is None:
@@ -1209,6 +1229,12 @@ class ImageGUI(Tk.Frame):
         pyplot.plot(xvalues, yvalues, sym, color=colour, markersize=markersize)
         if parameters.get("title") is not None:
             pyplot.title(parameters.get("title"))
+        if not ymodel is None:
+            pyplot.plot(xvalues, ymodel, ':', color='red')
+            if not params is None:
+                str1 = 'Fit: Centre %.3f Peak %.2f Sigma %.2f Baseline %.2f' % (
+                    params[0], params[1], params[2], params[3])
+                pyplot.suptitle(str1)
         if parameters.get("xlabel") is not None:
             pyplot.xlabel(parameters.get("xlabel"))
         if parameters.get("ylabel") is not None:
