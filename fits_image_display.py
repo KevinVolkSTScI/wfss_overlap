@@ -25,7 +25,6 @@ is used.  There is no mechanism here for using other planes.
 import math
 import sys
 import numpy
-import matplotlib.pyplot as pyplot
 import astropy.io.fits as fits
 import tkinter as Tk
 import tkinter.ttk
@@ -37,6 +36,7 @@ import matplotlib.lines as mlines
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm
+import matplotlib.pyplot as pyplot
 import general_utilities
 import mpfitexpr
 
@@ -810,15 +810,11 @@ class ImageGUI(Tk.Frame):
                 y0 = y1 - 5
             subim = numpy.copy(self.image[y0:y1, x0:x1])
             vector = numpy.mean(subim, axis=0)
-            print(vector)
             xvalues = numpy.arange(len(vector))+x0
-            print(xvalues)
             ind = numpy.argmax(vector)
-            print(ind)
             mind = numpy.argmin(vector)
             start = numpy.asarray(
                 [xvalues[ind], vector[ind], 1., vector[mind]])
-            print(start)
             params, yfit = mpfitexpr.mpfitexpr(
                 "p[3]+p[1]/numpy.exp((x-p[0])*(x-p[0])/(2.*p[2]*p[2]))",
                 xvalues, vector, vector*0.+1., start)
