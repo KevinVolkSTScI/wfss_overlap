@@ -47,6 +47,7 @@ import numpy
 import matplotlib
 import tkinter as Tk
 import tkinter.filedialog
+from astropy.io import fits as fits
 
 def get_subimage(image, zoom):
     """
@@ -811,3 +812,17 @@ def range_check(angle):
     newangle = angle - offset*360.
     return newangle
 
+def save_fits(image):
+    if True:
+#    try:
+        outfile = tkinter.filedialog.asksaveasfilename(
+            filetypes=[('FITS', '*.fits')], title='Output FITS File Name')
+        print(outfile)
+        if (isinstance(outfile, type('string'))) and (len(outfile) > 0):
+            hdu = fits.PrimaryHDU(image)
+            hdu.writeto(outfile)
+            values = outfile.split('/')
+            filename = values[-1]
+            print('Have saved the current image to: %s.\n' % (filename))
+#    except:
+#        pass
