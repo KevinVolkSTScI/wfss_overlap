@@ -38,7 +38,6 @@ from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as pyplot
 import general_utilities
-import mpfitexpr
 
 class ImageGUI(Tk.Frame):
     """
@@ -67,7 +66,6 @@ class ImageGUI(Tk.Frame):
         self.zoom = [1, 0, 0]
         self.xposition = None
         self.yposition = None
-        self.angle = None
         if parent is not None:
             # initialize the window and make the plot area.
             Tk.Frame.__init__(self, parent, args)
@@ -200,13 +198,6 @@ class ImageGUI(Tk.Frame):
         self.zsmaxField.pack()
         try:
             zmin1, zmax1 = self.get_limits(self.image)
-            ratio = abs(zmax1/zmin1)
-            if ratio < 1.2:
-                if zmin1 < 0.:
-                    zmax1 = zmin1
-                    zmin1 = 3.*zmin1
-                else:
-                    zmax1 = 3.*zmin1
         except:
             zmin1 = 0.
             zmax1 = 1.
@@ -287,9 +278,9 @@ class ImageGUI(Tk.Frame):
             value=1)
         t2.pack(side=Tk.LEFT)
         self.rangeType.set(0)
-#        b1 = Tk.Button(buttonFrame, text='Read New Image',
-#                       command=self.readNewImage)
-#        b1.pack(side=Tk.TOP)
+        b1 = Tk.Button(buttonFrame, text='Read New Image',
+                       command=self.readNewImage)
+        b1.pack(side=Tk.TOP)
         b1 = Tk.Button(buttonFrame, text='Save as PNG',
                        command=lambda: general_utilities.save_png_figure(
                            self.mplfig1))
@@ -301,9 +292,9 @@ class ImageGUI(Tk.Frame):
         b1 = Tk.Button(buttonFrame, text='Redisplay',
                        command=self.displayImage)
         b1.pack(side=Tk.TOP)
-#        b1 = Tk.Button(buttonFrame, text='Close',
-#                       command=lambda: self.imageExit(imagewindow))
-#        b1.pack(side=Tk.TOP)
+        b1 = Tk.Button(buttonFrame, text='Close',
+                       command=lambda: self.imageExit(imagewindow))
+        b1.pack(side=Tk.TOP)
         self.displayImage()
 
     def zoom_corner(self, sh1, zoom, x1, y1):
@@ -783,8 +774,8 @@ class ImageGUI(Tk.Frame):
         """
         Routine for applying imaging key press events.
 
-        Currently the routine sets the image center at the event position.  
-        This does nothing if the zoom is not applied.
+        Holder routine for key press events in the image window.  Sets the
+        image position.
         """
         if (event.xdata is None) or (event.ydata is None):
             return
@@ -792,7 +783,6 @@ class ImageGUI(Tk.Frame):
         ypixel = int(self.zoom[2]+event.ydata+0.5)
         if (xpixel is None) or (ypixel is None):
             return
-        imshape = self.image.shape
         if event.key == 'j':
             x0 = xpixel-10
             if x0 < 0:
@@ -925,34 +915,20 @@ class ImageGUI(Tk.Frame):
         except Exception:
             pass
 
-    def displayImage(self, getrange=False, angle=None):
+    def displayImage(self):
         """
         Display the current image in the display area.
 
-        Parameters
-        ----------
-
-        getrange:   An optional boolean variable, if True the code resets 
-                    the display range, default is False/
+        This routine has no parameters and no return value.  It is a
+        service routine to display the current image stored in self.image
+        into the image display window.
         """
         if self.image is not None:
             self.mplsubplot1.clear()
-            if getrange:
-                zmin = numpy.min(self.image)
-                general_utilities.put_value(zmin, self.minField)
-                zmax = numpy.max(self.image)
-                general_utilities.put_value(zmax, self.maxField)
-                try:
-                    zmin1, zmax1 = self.get_limits(self.image)
-                except:
-                    zmin1 = 0.
-                    zmax1 = 1.
-                general_utilities.put_value(zmin1, self.zsminField)
-                general_utilities.put_value(zmax1, self.zsmaxField)
-            zmin = float(self.minField.get())
-            zmax = float(self.maxField.get())
-            zsmin = float(self.zsminField.get())
-            zsmax = float(self.zsmaxField.get())
+            s1 = self.minField.get()
+            zmin = float(s1)
+            s1 = self.maxField.get()
+            zmax = float(s1)
             cind = self.colourScheme.current()
             scaleOption = self.scaleType.get()
             try:
@@ -991,20 +967,6 @@ class ImageGUI(Tk.Frame):
                 im1 = self.mplsubplot1.imshow(
                     newimage, cmap=self.colourLabels[cind], origin='lower',
                     vmin=zmin1, vmax=zmax1)
-            if angle is not None:
-                try:
-                    value = float(angle)
-                    self.mplsubplot1.set_title(
-                        'Rotation angle = %.3f' % (value))
-                    self.angle = value
-                    self.mplsubplot1.set_title(
-                        'Rotation angle = %.3f' % (value))
-                except:
-                    pass
-            else:
-                if not self.angle is None:
-                    self.mplsubplot1.set_title(
-                        'Rotation angle = %.3f' % (self.angle))
             self.mplsubplot1.get_xaxis().set_visible(self.showImageAxes)
             self.mplsubplot1.get_yaxis().set_visible(self.showImageAxes)
             if self.showImageAxes:
@@ -1050,22 +1012,6 @@ class ImageGUI(Tk.Frame):
                         im1, cmap=self.colourLabels[cind],
                         orientation='horizontal')
                 self.colourBarVariable.ax.set_xlabel(cblabel, rotation=0)
-            sh1 = self.image.shape
-            if sh1[0] == 3631:
-                xline1 = numpy.asarray([655, 2977, 2977, 655, 655])
-                yline1 = numpy.asarray([655, 655, 2977, 2977, 655])
-                xline2 = numpy.asarray([792, 2840, 2840, 792, 792])
-                yline2 = numpy.asarray([792, 792, 2840, 2840, 792])
-                self.mplsubplot1.plot(xline1, yline1, color='white',
-                                      linestyle='dashed', linewidth=1.0)
-                self.mplsubplot1.plot(xline2, yline2, color='white',
-                                      linestyle='dotted', linewidth=1.0)
-
-            elif sh1[0] == 2322:
-                xline1 = numpy.asarray([137, 2185, 2185, 137, 137])
-                yline1 = numpy.asarray([137, 137, 2185, 2185, 137])
-                self.mplsubplot1.plot(xline1, yline1, color='white',
-                                      linestyle='dotted', linewidth=1.0)
             self.canvas1.draw()
 
     def invLogTransform(self, value, zmin, zmax):
@@ -1201,7 +1147,6 @@ class ImageGUI(Tk.Frame):
         newimage[image < 0.] = -1. * newimage[image < 0.]
         self.transvalues = [1.]
         return newimage
-
 
     def plotxy(self, xvalues, yvalues, **parameters):
         """
