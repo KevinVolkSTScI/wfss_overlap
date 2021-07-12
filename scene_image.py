@@ -293,7 +293,7 @@ def make_galaxy_image(galaxy_file_name, position, filter1, path='./',
         gimage = generate_galaxy_image(galaxy_list, position, simple=simple)
         return gimage
     except:
-        print('Some error occured trying to read the galaxies parameter file.')
+#        print('Some error occured trying to read the galaxies parameter file.')
         return None
 
 def generate_galaxy_image(galaxy_list, position, rotation=0., simple=False):
