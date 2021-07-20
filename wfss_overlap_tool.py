@@ -310,10 +310,17 @@ class WFSSOverlap(Tk.Frame):
         if self.imagewin is None:
             pass
         else:
+            option = False
             angle = self.anglevar.get()
+            display_option = self.typevar.get()
+            image_option = self.imagevar.get()
+            total_option = image_option*10+display_option
             rotated_image = scene_image.rotate_image(self.scene_image, angle)
             self.generate_image(rotated_image)
-            self.imagewin.displayImage(angle=angle)
+            if (self.last_type is None) or (total_option != self.last_type):
+                option = True
+                self.last_type = total_option
+            self.imagewin.displayImage(getrange=option, angle=angle)
 
 
     def make_scene(self):
@@ -511,7 +518,7 @@ class WFSSOverlap(Tk.Frame):
         if work_image is None:
             return
         self.generate_image(work_image)
-        if total_option != self.last_type:
+        if (self.last_type is None) or (total_option != self.last_type):
             option = True
             self.last_type = total_option
         self.imagewin.displayImage(getrange=option, angle=angle)

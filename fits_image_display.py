@@ -946,12 +946,12 @@ class ImageGUI(Tk.Frame):
         ----------
 
         getrange:   An optional boolean variable, if True the code resets 
-                    the display range, default is False/
+                    the display range, default is False.
         """
         if self.image is not None:
             self.mplsubplot1.clear()
             if getrange:
-                self.zoom[0] = 1
+                self.zoom = [1, 0, 0]
                 zmin = numpy.min(self.image)
                 general_utilities.put_value(zmin, self.minField)
                 zmax = numpy.max(self.image)
@@ -1065,21 +1065,22 @@ class ImageGUI(Tk.Frame):
                         orientation='horizontal')
                 self.colourBarVariable.ax.set_xlabel(cblabel, rotation=0)
             sh1 = self.image.shape
-            if sh1[0] == 3631:
-                xline1 = numpy.asarray([655, 2977, 2977, 655, 655])
-                yline1 = numpy.asarray([655, 655, 2977, 2977, 655])
-                xline2 = numpy.asarray([792, 2840, 2840, 792, 792])
-                yline2 = numpy.asarray([792, 792, 2840, 2840, 792])
-                self.mplsubplot1.plot(xline1, yline1, color='white',
-                                      linestyle='dashed', linewidth=1.0)
-                self.mplsubplot1.plot(xline2, yline2, color='white',
-                                      linestyle='dotted', linewidth=1.0)
+            if self.zoom[0] == 1:
+                if sh1[0] == 3631:
+                    xline1 = numpy.asarray([655, 2977, 2977, 655, 655])
+                    yline1 = numpy.asarray([655, 655, 2977, 2977, 655])
+                    xline2 = numpy.asarray([792, 2840, 2840, 792, 792])
+                    yline2 = numpy.asarray([792, 792, 2840, 2840, 792])
+                    self.mplsubplot1.plot(xline1, yline1, color='white',
+                                          linestyle='dashed', linewidth=1.0)
+                    self.mplsubplot1.plot(xline2, yline2, color='white',
+                                          linestyle='dotted', linewidth=1.0)
 
-            elif sh1[0] == 2322:
-                xline1 = numpy.asarray([137, 2185, 2185, 137, 137])
-                yline1 = numpy.asarray([137, 137, 2185, 2185, 137])
-                self.mplsubplot1.plot(xline1, yline1, color='white',
-                                      linestyle='dotted', linewidth=1.0)
+                elif sh1[0] == 2322:
+                    xline1 = numpy.asarray([137, 2185, 2185, 137, 137])
+                    yline1 = numpy.asarray([137, 137, 2185, 2185, 137])
+                    self.mplsubplot1.plot(xline1, yline1, color='white',
+                                          linestyle='dotted', linewidth=1.0)
             self.canvas1.draw()
 
     def invLogTransform(self, value, zmin, zmax):
