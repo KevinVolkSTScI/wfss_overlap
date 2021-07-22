@@ -24,7 +24,7 @@ import general_utilities
 import scene_image
 import wfss_scene
 BGCOL = '#F8F8FF'
-FILTERNAMES = ['F090W', 'F115W', 'F140M', 'F140W', 'F158M', 'F200W']
+FILTERNAMES = ['F090W', 'F115W', 'F140M', 'F150W', 'F158M', 'F200W']
 GRISMNAMES = ['GR150R', 'GR150C']
 
 
