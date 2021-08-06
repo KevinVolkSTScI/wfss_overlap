@@ -1,39 +1,39 @@
 """
 Code to make a scene image from input files for stars and galaxies.
 
-Given a pointing and suitable catalogue files, one for stars and one for 
+Given a pointing and suitable catalogue files, one for stars and one for
 galaxies as in with Mirage, generate a scene image in the standard orientation.
 
-Actually two scene images are made, one with the stars as true point sources 
+Actually two scene images are made, one with the stars as true point sources
 and one where the first image is convolved with the PSF function.
 
 Routines in this file
 
-make_star_image:  Make a star scene image from a Mirage star list file, with 
-                  the PSF assumed to be a single pixel (for later convolution 
+make_star_image:  Make a star scene image from a Mirage star list file, with
+                  the PSF assumed to be a single pixel (for later convolution
                   with the real PSF)
 
-make_galaxy_image:  Make a galaxy scene image from a Mirage galaxy list file, 
-                    based on the Sersic parameters 
+make_galaxy_image:  Make a galaxy scene image from a Mirage galaxy list file,
+                    based on the Sersic parameters
 
-do_convolve:  Convolve the ideal scene image with a suitable NIRISS PSF image 
+do_convolve:  Convolve the ideal scene image with a suitable NIRISS PSF image
               to make the proper scene image
 
 rotate_image:  Use the scipy.ndimage.rotate function to rotate a scene image
 
-generate_image: Make an ideal star image from a list of stellar positions and 
+generate_image: Make an ideal star image from a list of stellar positions and
                 total signal values
 
-get_pixel:   Calculate the pixel position of a given (RA, Dec) sky position 
-             with respect to a given image reference position (RA0, Dec0), 
+get_pixel:   Calculate the pixel position of a given (RA, Dec) sky position
+             with respect to a given image reference position (RA0, Dec0),
              using pysiaf.
 
-rel_pos:   Calculate the pixel position of a given (RA, Dec) sky position 
-           with respect to an given image reference position (RA0, Dec0) 
+rel_pos:   Calculate the pixel position of a given (RA, Dec) sky position
+           with respect to an given image reference position (RA0, Dec0)
            using direct geometry.
 
 """
-import sys
+# import sys
 import math
 import numpy
 import pysiaf
@@ -45,46 +45,46 @@ from astropy.modeling.models import Sersic2D
 def make_star_image(star_file_name, position, filter1, path='./',
                     simple=False):
     """
-    Make the star scene image from an input file of positions/brightnesses, 
+    Make the star scene image from an input file of positions/brightnesses,
     each star on a single pixel.
 
     Parameters
     ----------
 
-    star_file_name:  a string variable giving the filename for the list of 
-                     stars to use, with (RA, Dec) sky positions and the 
+    star_file_name:  a string variable giving the filename for the list of
+                     stars to use, with (RA, Dec) sky positions and the
                      NIRISS magnitudes
 
-    position:        a two-element float tuple with the (RA, Dec) values in 
+    position:        a two-element float tuple with the (RA, Dec) values in
                      decimal degrees for the centre of the field
 
-    filter1:         a string variable giving the NIRISS filter name for which 
+    filter1:         a string variable giving the NIRISS filter name for which
                      to make the scene image
 
-    path:            an optional string variable pointing to where the PSF 
+    path:            an optional string variable pointing to where the PSF
                      images are stored, defaults to the current directory
 
-    simple:          an optional Boolean variable, if True use the simple 
-                     sky->pixel calculation, if False, the default, use 
+    simple:          an optional Boolean variable, if True use the simple
+                     sky->pixel calculation, if False, the default, use
                      pysiaf
 
     Returns
     -------
 
-    scene_image:    a numpy float array of the brightness values (ADU/s) for 
-                    the stars in the scene.  Stars are true point sources in 
-                    this image, occupying a single pixel.  The image is 3631 
-                    pixels square with pixel (1816, 1816) being the reference 
-                    position.  The image is undistorted.  Each star is put at 
+    scene_image:    a numpy float array of the brightness values (ADU/s) for
+                    the stars in the scene.  Stars are true point sources in
+                    this image, occupying a single pixel.  The image is 3631
+                    pixels square with pixel (1816, 1816) being the reference
+                    position.  The image is undistorted.  Each star is put at
                     the nearest pixel position.  The image is in the standard
-                    orientation.  The NIRISS detector field is then pixels 
-                    [792:2840, 792:2840] by assumption.  The larger POM field 
+                    orientation.  The NIRISS detector field is then pixels
+                    [792:2840, 792:2840] by assumption.  The larger POM field
                     is assumed to cover pixels [655:2976, 655:2976].
 
                     None is returned if there is an issue.
 
-    star_list:      A tuple of the [ra, dec, signal] values found within the 
-                    scene, each element being a numpy array; if no stars are 
+    star_list:      A tuple of the [ra, dec, signal] values found within the
+                    scene, each element being a numpy array; if no stars are
                     found in the field then the values are None.
     """
     blank = [None, None, None]
@@ -148,12 +148,12 @@ def make_star_image(star_file_name, position, filter1, path='./',
                     print('Unable to read the position/magnitude values.')
                     return None, blank
         lines = 0
-        signal = magvalues*0.
+        signal1 = magvalues*0.
         for loop in range(len(magvalues)):
-            signal[loop] = mag0[findex]/(10.**(magvalues[loop]*0.4))
+            signal1[loop] = mag0[findex]/(10.**(magvalues[loop]*0.4))
             if abmag_flag:
-                signal[loop] = signal[loop]*aboff[findex]
-        star_list = [ravalues, decvalues, signal]
+                signal1[loop] = signal1[loop]*aboff[findex]
+        star_list = [ravalues, decvalues, signal1]
         scene_image, new_star_list = generate_image(star_list, position,
                                                     simple=simple)
         return scene_image, new_star_list
@@ -161,41 +161,41 @@ def make_star_image(star_file_name, position, filter1, path='./',
         print('An error occurred generating the scene image.')
         return None, blank
 
-def make_galaxy_image(galaxy_file_name, position, filter1, path='./', 
+def make_galaxy_image(galaxy_file_name, position, filter1, path='./',
                       simple=False):
     """
-    Make the galaxy scene image from an input parameter file, in standard 
+    Make the galaxy scene image from an input parameter file, in standard
     orientation (not convolved with a PSF)
 
     Parameters
     ----------
 
-    galaxy_file_name:  a string variable giving the name for the file of 
-                       galaxy parameters to use, with (RA, Dec) sky positions, 
+    galaxy_file_name:  a string variable giving the name for the file of
+                       galaxy parameters to use, with (RA, Dec) sky positions,
                        shape parameters, and the NIRISS magnitudes
 
-    postion:         a two-element real tuple with the (RA, Dec) values in 
+    postion:         a two-element real tuple with the (RA, Dec) values in
                      decimal degrees for the centre of the field
 
-    filter1:         a string variable giving the NIRISS filter name for which 
+    filter1:         a string variable giving the NIRISS filter name for which
                      to make the scene image
 
-    path:            an optional string variable pointing to where the PSF 
+    path:            an optional string variable pointing to where the PSF
                      images are stored, defaults to the current directory
 
-    simple:          an optional Boolean variable, if True use the simple 
-                     sky->pixel calculation, if False, the default, use 
+    simple:          an optional Boolean variable, if True use the simple
+                     sky->pixel calculation, if False, the default, use
                      pysiaf
 
     Returns
     -------
 
-    scene_image:    a numpy float array of the brightness values (ADU/s) for 
-                    the galaxies in the scene.  The image is 3631 pixels square 
-                    with pixel (1816, 1816) being the reference position.  The 
-                    image is undistorted.  Each galaxy is put at the nearest 
-                    pixel position.  The NIRISS detector field is at pixels  
-                    [792:2840, 792:2840] by assumption.  The larger POM field 
+    scene_image:    a numpy float array of the brightness values (ADU/s) for
+                    the galaxies in the scene.  The image is 3631 pixels square
+                    with pixel (1816, 1816) being the reference position.  The
+                    image is undistorted.  Each galaxy is put at the nearest
+                    pixel position.  The NIRISS detector field is at pixels
+                    [792:2840, 792:2840] by assumption.  The larger POM field
                     is assumed to cover pixels [655:2976, 655:2976].
 
                     None is returned if there is an issue.
@@ -281,14 +281,14 @@ def make_galaxy_image(galaxy_file_name, position, filter1, path='./',
                                      comments=['#', 'index'])
             indexvalues = numpy.loadtxt(galaxy_file_name, usecols=[indexcol,],
                                         comments=['#', 'index'])
-            signal = mag0[findex]/numpy.power(10., magvalues*0.4)
-            signal = signal/1.612
+            signal1 = mag0[findex]/numpy.power(10., magvalues*0.4)
+            signal1 = signal1/1.612
             if abmag_flag:
-                signal = signal*aboff[findex]
+                signal1 = signal1*aboff[findex]
         except:
             print('Unable to read the position/magnitude/shape values.')
             return None
-        galaxy_list = [ravalues, decvalues, magvalues, signal, 
+        galaxy_list = [ravalues, decvalues, magvalues, signal1,
                        radvalues, ellipvalues, pavalues, indexvalues]
         gimage = generate_galaxy_image(galaxy_list, position, simple=simple)
         return gimage
@@ -303,18 +303,18 @@ def generate_galaxy_image(galaxy_list, position, rotation=0., simple=False):
     Parameters
     ----------
 
-    galaxy_list:   A list of numpy 1-d float arrays holding the catalogue 
-                   values for the scene (RA, DEC, mag, signal, radii, 
+    galaxy_list:   A list of numpy 1-d float arrays holding the catalogue
+                   values for the scene (RA, DEC, mag, signal, radii,
                    ellipticity, angle, sersic index)
 
-    position:      A two-element list giving the image center (RA, Dec) in 
-                   degrees 
+    position:      A two-element list giving the image center (RA, Dec) in
+                   degrees
 
-    rotation:      An optional float value, the rotation angle in degrees E 
+    rotation:      An optional float value, the rotation angle in degrees E
                    of N
 
-    simple:        A boolean value, if True use the simple projection to get 
-                   pixel positions, if False use pysiaf.  The latter is the 
+    simple:        A boolean value, if True use the simple projection to get
+                   pixel positions, if False use pysiaf.  The latter is the
                    default.
 
     Returns
@@ -331,7 +331,7 @@ def generate_galaxy_image(galaxy_list, position, rotation=0., simple=False):
     twopi = 2.*3.14159265358979
     ravalues = galaxy_list[0]
     decvalues = galaxy_list[1]
-    signal = galaxy_list[3]
+    signals = galaxy_list[3]
     radvalues = galaxy_list[4]/0.0656
     ellipvalues = galaxy_list[5]
     pavalues = galaxy_list[6]*twopi/360.0
@@ -381,7 +381,7 @@ def generate_galaxy_image(galaxy_list, position, rotation=0., simple=False):
                 x1 = 3631
             try:
                 galaxy_image[y0:y1, x0:x1] = galaxy_image[y0:y1, x0:x1] + \
-                    image[ymin:ymax, xmin:xmax]*signal[loop]
+                    image[ymin:ymax, xmin:xmax]*signals[loop]
             except:
                 pass
     return galaxy_image
@@ -394,7 +394,7 @@ def do_convolve(scene_image, filter1, path):
     Parameters
     ----------
 
-    scene_image:   a two-dimensional numpy float array, the input image to be 
+    scene_image:   a two-dimensional numpy float array, the input image to be
                    convovled with a PSF image
 
     filter1:       a string giving the NIRISS filter name to use
@@ -404,8 +404,8 @@ def do_convolve(scene_image, filter1, path):
     Returns
     -------
 
-    convolved_image:  a two-dimensional numpy float array of the convolved 
-                      image, of the same dimensions are scene_image, or 
+    convolved_image:  a two-dimensional numpy float array of the convolved
+                      image, of the same dimensions are scene_image, or
                       None is there is an issue.
     """
     psfname = 'niriss_NIS_x1024_y1024_' + filter1.lower() + '_predicted_0_0p00_0p00.fits'
@@ -434,8 +434,8 @@ def rotate_image(scene_image, angle):
 
     Returns:
 
-    rotated_image:  a numpy two-dimensional array of float values, of the 
-                    same dimensions as the scene_image array, containing the 
+    rotated_image:  a numpy two-dimensional array of float values, of the
+                    same dimensions as the scene_image array, containing the
                     rotated version of the image
 
     The rotation is done using the scipy ndimage package.
@@ -455,7 +455,7 @@ def rotate_image(scene_image, angle):
         ymin = (sh2[0]-sh1[0]) // 2
         ymax = ymin+sh1[0]
         rotated_image = numpy.copy(rotated_image[ymin:ymax, xmin:xmax])
-# ndimage.rotate tends to produce negative artifacts in the image, screen 
+# ndimage.rotate tends to produce negative artifacts in the image, screen
 # these out to the minimum in the original image
     inds = numpy.where(rotated_image < zmin)
     rotated_image[inds] = zmin
@@ -470,17 +470,17 @@ def generate_image(star_list, position, rotation=0., simple=False):
     Parameters
     ----------
 
-    star_list:     A list of numpy 1-d float arrays holding the catalogue 
+    star_list:     A list of numpy 1-d float arrays holding the catalogue
                    values for the scene (RA, DEC, mag, signal)
 
-    position:      A two-element list giving the image center (RA, Dec) in 
-                   degrees 
+    position:      A two-element list giving the image center (RA, Dec) in
+                   degrees
 
-    rotation:      An optional float value, the rotation angle in degrees E 
+    rotation:      An optional float value, the rotation angle in degrees E
                    of N
 
-    simple:        A boolean value, if True use the simple projection to get 
-                   pixel positions, if False use pysiaf.  The latter is the 
+    simple:        A boolean value, if True use the simple projection to get
+                   pixel positions, if False use pysiaf.  The latter is the
                    default.
 
     Returns
@@ -488,14 +488,14 @@ def generate_image(star_list, position, rotation=0., simple=False):
 
     scene_image:   A 3631x3631 numpy float array, the scene image.
 
-    new_star_list:   A new list, same structure as star_list, containts the 
+    new_star_list:   A new list, same structure as star_list, containts the
                      values for the stars within the field
     """
     nout = 0
     scene_image = numpy.zeros((3631, 3631), dtype=numpy.float32)
     ravalues = star_list[0]
     decvalues = star_list[1]
-    signal = star_list[2]
+    signals = star_list[2]
     newravalues = []
     newdecvalues = []
     newsignal = []
@@ -515,11 +515,11 @@ def generate_image(star_list, position, rotation=0., simple=False):
         nxpix = int(xpix)+792
         nypix = int(ypix)+792
         if (nxpix >= 0) and (nxpix < 3631) and (nypix >= 0) and (nypix < 3631):
-            scene_image[nypix, nxpix] = scene_image[nypix, nxpix]+signal[loop]
+            scene_image[nypix, nxpix] = scene_image[nypix, nxpix]+signals[loop]
             nout = nout + 1
             newravalues.append(ravalues[loop])
             newdecvalues.append(decvalues[loop])
-            newsignal.append(signal[loop])
+            newsignal.append(signals[loop])
     new_star_list = [numpy.asarray(newravalues, dtype=numpy.float32),
                      numpy.asarray(newdecvalues, dtype=numpy.float32),
                      numpy.asarray(newsignal, dtype=numpy.float32)]
@@ -527,7 +527,7 @@ def generate_image(star_list, position, rotation=0., simple=False):
 
 def get_pixel(ratarget, dectarget, ra0, dec0, rotation, instrument, aperture):
     """
-    Calculate the pixel position of a target for a given aperture and sky 
+    Calculate the pixel position of a target for a given aperture and sky
     postion plus orientation.
 
     Parameters
@@ -545,7 +545,7 @@ def get_pixel(ratarget, dectarget, ra0, dec0, rotation, instrument, aperture):
 
     instrument: a string variable giving the instrument name (e.g. 'NIRISS')
 
-    aperture:   a string variable giving the instrument aperture name (e.g. 
+    aperture:   a string variable giving the instrument aperture name (e.g.
                 'NIS_CEN')
 
     Returns
@@ -567,22 +567,30 @@ def get_pixel(ratarget, dectarget, ra0, dec0, rotation, instrument, aperture):
     dec_ref = dec0*dtor
     pa_v3 = rotation*dtor
     mat1 = numpy.array([[numpy.cos(ra_ref) * numpy.cos(dec_ref),
-        -numpy.sin(ra_ref) * numpy.cos(pa_v3) + numpy.cos(ra_ref) * numpy.sin(dec_ref) * numpy.sin(pa_v3),
-        -numpy.sin(ra_ref) * numpy.sin(pa_v3) - numpy.cos(ra_ref) * numpy.sin(dec_ref) * numpy.cos(pa_v3)],
+        -numpy.sin(ra_ref) * numpy.cos(pa_v3) + numpy.cos(ra_ref) * \
+            numpy.sin(dec_ref) * numpy.sin(pa_v3),
+        -numpy.sin(ra_ref) * numpy.sin(pa_v3) - numpy.cos(ra_ref) * \
+            numpy.sin(dec_ref) * numpy.cos(pa_v3)],
         [numpy.sin(ra_ref) * numpy.cos(dec_ref),
-         numpy.cos(ra_ref) * numpy.cos(pa_v3) + numpy.sin(ra_ref) * numpy.sin(dec_ref) * numpy.sin(pa_v3),
-         numpy.cos(ra_ref) * numpy.sin(pa_v3) - numpy.sin(ra_ref) * numpy.sin(dec_ref) * numpy.cos(pa_v3)],
+         numpy.cos(ra_ref) * numpy.cos(pa_v3) + numpy.sin(ra_ref) * \
+             numpy.sin(dec_ref) * numpy.sin(pa_v3),
+         numpy.cos(ra_ref) * numpy.sin(pa_v3) - numpy.sin(ra_ref) * \
+             numpy.sin(dec_ref) * numpy.cos(pa_v3)],
         [numpy.sin(dec_ref), -numpy.cos(dec_ref) * numpy.sin(pa_v3),
          numpy.cos(dec_ref) * numpy.cos(pa_v3)]])
 
-    X = -(mat1[2, 0] * numpy.cos(v2) + mat1[2, 1] * numpy.sin(v2)) * numpy.sin(v3) + mat1[2, 2] * numpy.cos(v3)
-    Y = (mat1[0, 0] *  mat1[1, 2] - mat1[1, 0] * mat1[0, 2]) * numpy.cos(v2) + \
-      (mat1[0, 1] * mat1[1, 2] - mat1[1, 1] * mat1[0, 2]) * numpy.sin(v2)
+    X = -(mat1[2, 0] * numpy.cos(v2) + mat1[2, 1] * numpy.sin(v2)) * \
+        numpy.sin(v3) + mat1[2, 2] * numpy.cos(v3)
+    Y = (mat1[0, 0] *  mat1[1, 2] - mat1[1, 0] * mat1[0, 2]) * \
+        numpy.cos(v2) + (mat1[0, 1] * mat1[1, 2] - mat1[1, 1] * mat1[0, 2]
+                         ) * numpy.sin(v2)
     local_roll = numpy.rad2deg(numpy.arctan2(Y, X))
     if local_roll < 0:
         local_roll = local_roll+360.
-    attitude_matrix = pysiaf.utils.rotations.attitude(v2_arcsec, v3_arcsec, ra0, dec0, local_roll)
-    loc_v2, loc_v3 = pysiaf.utils.rotations.getv2v3(attitude_matrix, ratarget, dectarget)
+    attitude_matrix = pysiaf.utils.rotations.attitude(
+        v2_arcsec, v3_arcsec, ra0, dec0, local_roll)
+    loc_v2, loc_v3 = pysiaf.utils.rotations.getv2v3(
+        attitude_matrix, ratarget, dectarget)
     xpixel, ypixel = siaf.tel_to_sci(loc_v2, loc_v3)
     return xpixel, ypixel
 
@@ -598,7 +606,7 @@ def relpos(ra1, dec1, ra0, dec0, rotation, pixelsize):
 
     ra0:    A float value, the RA of the reference position in decimal degrees
 
-    dec0:    A float value, the Dec of the reference position in decimal 
+    dec0:    A float value, the Dec of the reference position in decimal
              degrees
 
     rotation:   A float value, the rotation angle in degrees E of N

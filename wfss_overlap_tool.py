@@ -3,22 +3,22 @@
 """
 Tool to access the possibility of overlap of spectra for a field of view.
 
-This code takes as input either a pair or Mirage source input files (one for 
-stars and one for galaxies) or a scene image made from such input files and 
-allows the user to investigate the resulting scene at arbitrary rotations 
-to determine if spectral order overlap will be an issue for any given source 
+This code takes as input either a pair or Mirage source input files (one for
+stars and one for galaxies) or a scene image made from such input files and
+allows the user to investigate the resulting scene at arbitrary rotations
+to determine if spectral order overlap will be an issue for any given source
 in the field.
 
 """
 import sys
 import os
-import numpy
 import tkinter as Tk
 import tkinter.ttk
 import tkinter.messagebox
 import tkinter.filedialog
 from tkinter.scrolledtext import ScrolledText
-import astropy.io.fits as fits
+import numpy
+from astropy.io import fits 
 import fits_image_display
 import general_utilities
 import scene_image
@@ -54,6 +54,8 @@ class WFSSOverlap(Tk.Frame):
         self.imagewin = None
         self.last_type = None
         self.siaf = True
+        self.imagefilename = None
+        self.indpi = None
         for loop in range(len(sys.argv)):
             if '--simple' in sys.argv[loop]:
                 self.siaf = False
@@ -189,13 +191,13 @@ class WFSSOverlap(Tk.Frame):
         tframe = Tk.Frame(typeframe)
         tframe.pack(side=Tk.LEFT)
         self.typevar = Tk.IntVar()
-        rb1 = Tk.Radiobutton(tframe, text='Scene', variable=self.typevar, 
+        rb1 = Tk.Radiobutton(tframe, text='Scene', variable=self.typevar,
                              value=0, command=lambda: self.redisplay(None))
         rb1.pack(side=Tk.LEFT)
-        rb1 = Tk.Radiobutton(tframe, text='POM', variable=self.typevar, 
+        rb1 = Tk.Radiobutton(tframe, text='POM', variable=self.typevar,
                              value=1, command=lambda: self.redisplay(None))
         rb1.pack(side=Tk.LEFT)
-        rb1 = Tk.Radiobutton(tframe, text='Image Area', variable=self.typevar, 
+        rb1 = Tk.Radiobutton(tframe, text='Image Area', variable=self.typevar,
                              value=2, command=lambda: self.redisplay(None))
         rb1.pack(side=Tk.LEFT)
         self.typevar.set(2)
@@ -206,14 +208,14 @@ class WFSSOverlap(Tk.Frame):
         tframe = Tk.Frame(showframe)
         tframe.pack()
         self.imagevar = Tk.IntVar()
-        rb1 = Tk.Radiobutton(tframe, text='Direct', variable=self.imagevar, 
+        rb1 = Tk.Radiobutton(tframe, text='Direct', variable=self.imagevar,
                              value=0, command=lambda: self.redisplay(None))
         rb1.pack(side=Tk.LEFT)
-        rb1 = Tk.Radiobutton(tframe, text='Dispersed', variable=self.imagevar, 
+        rb1 = Tk.Radiobutton(tframe, text='Dispersed', variable=self.imagevar,
                              value=1, command=lambda: self.redisplay(None))
         rb1.pack(side=Tk.LEFT)
         rb1 = Tk.Radiobutton(tframe, text='Unconvolved',
-                             variable=self.imagevar, 
+                             variable=self.imagevar,
                              value=2, command=lambda: self.redisplay(None))
         rb1.pack(side=Tk.LEFT)
         self.imagevar.set(1)
@@ -223,7 +225,7 @@ class WFSSOverlap(Tk.Frame):
         self.angle_slider = Tk.Scale(anglefield, orient=Tk.HORIZONTAL,
                                      length = 720, from_=0., to=360.,
                                      resolution=0.01,
-                                     label='Rotation Angle (degrees)', 
+                                     label='Rotation Angle (degrees)',
                                      variable=self.anglevar)
         self.angle_slider.bind("<ButtonRelease-1>", self.apply_angle)
         self.angle_slider.bind("<KeyPress>", self.apply_angle)
@@ -300,12 +302,36 @@ class WFSSOverlap(Tk.Frame):
 
 
     def apply_angle(self, event):
+        """
+        Apply a selected rotation angle value from the slider.
+
+        Parameters
+        ----------
+        event : tkinter event variable
+
+        Returns
+        -------
+        None.
+
+        """
         self.redisplay(None)
         general_utilities.put_message(
                 self.message_area,
                 'Angle set to: %f degrees.\n' % (self.anglevar.get()))
-        
+
     def redisplay(self, event):
+        """
+        Redisplay the image in the window, possibly due to an event.
+
+        Parameters
+        ----------
+        event : nominally a tkinter event variable, but can be None as well.
+
+        Returns
+        -------
+        None.
+
+        """
         image_option = self.imagevar.get()
         if self.imagewin is None:
             pass
@@ -339,8 +365,7 @@ class WFSSOverlap(Tk.Frame):
         """
         try:
             background = float(self.background_entry.get())
-            if background < 0.:
-                background = 0.
+            background = max(background, 0.)
             general_utilities.put_message(
                 self.message_area,
                 'Background level set to: %f ADU/s.\n' % (background))
@@ -371,7 +396,7 @@ class WFSSOverlap(Tk.Frame):
                 position = numpy.asarray(position)
             else:
                 general_utilities.put_message(
-                    self.message_area, 
+                    self.message_area,
                     'Position string not properly defined, will use mean of star positions.\n')
                 position = None
             path = self.path_entry.get()
@@ -389,11 +414,11 @@ class WFSSOverlap(Tk.Frame):
                 simple=simple)
             if not stars_image is None:
                 general_utilities.put_message(
-                    self.message_area, 
+                    self.message_area,
                     'Have made star scene image from file %s.\n' % (starname))
             else:
                 general_utilities.put_message(
-                    self.message_area, 
+                    self.message_area,
                     'Error in making the star scene image from file %s.\n' % (
                         starname))
                 return
@@ -405,14 +430,14 @@ class WFSSOverlap(Tk.Frame):
                 galaxies_image = None
             if not galaxies_image is None:
                 general_utilities.put_message(
-                    self.message_area, 
+                    self.message_area,
                     'Have made galaxies scene image from file %s.\n' % (extname))
                 stars_image = stars_image+galaxies_image
             stars_image = stars_image+background
             self.scene_image = stars_image
         except:
             general_utilities.put_message(
-                self.message_area, 
+                self.message_area,
                 'An error encountered making the scene image.\n')
 
 
@@ -439,7 +464,7 @@ class WFSSOverlap(Tk.Frame):
             values = outfile.split('/')
             filename = values[-1]
             general_utilities.put_message(
-                self.message_area, 
+                self.message_area,
                 'Have saved the current scene image to: %s.\n' % (filename))
         except:
             pass
@@ -476,12 +501,12 @@ class WFSSOverlap(Tk.Frame):
             if (dims[0] == 3631) and (dims[1] == 3631) and (len(dims) == 2):
                 self.scene_image = newimage
                 general_utilities.put_message(
-                    self.message_area, 
+                    self.message_area,
                     'Have read the image from: %s.\n' % (infile))
             else:
                 general_utilities.put_message(
-                    self.message_area, 
-                    'Could not read the image from: %s.\n' % (inname))
+                    self.message_area,
+                    'Could not read the image from: %s.\n' % (infile))
         except:
             pass
 
@@ -558,7 +583,7 @@ class WFSSOverlap(Tk.Frame):
 
     def extract_image(self, work_image):
         """
-        Extract the image are according the typevar value, and set the 
+        Extract the image are according the typevar value, and set the
         image display to this area.
 
         Parameters
@@ -588,9 +613,9 @@ class WFSSOverlap(Tk.Frame):
         Parameters
         ----------
 
-        fileentry:  A tkinter entry field where the file name will be 
+        fileentry:  A tkinter entry field where the file name will be
                     displayed.
-        pathentry:  A tkinter entry field where the directory path will be 
+        pathentry:  A tkinter entry field where the directory path will be
                     displayed.
 
         Returns
@@ -615,8 +640,8 @@ class WFSSOverlap(Tk.Frame):
 
     def mean_position(self, filename):
         """
-        Calculate the mean sky position from a Mirage star or galaxies input 
-        catalogue file.  RAs and Decs must be in columns 2 and 3 (1 and 2 in 
+        Calculate the mean sky position from a Mirage star or galaxies input
+        catalogue file.  RAs and Decs must be in columns 2 and 3 (1 and 2 in
         python notation).
 
         Parameters
@@ -627,10 +652,10 @@ class WFSSOverlap(Tk.Frame):
         Returns
         -------
 
-        meanra:   a float value, the mean of column 2 of the file, or None if 
+        meanra:   a float value, the mean of column 2 of the file, or None if
                   there is an issue
 
-        meandec:  a float value, the mean of column 3 of the file, or None if 
+        meandec:  a float value, the mean of column 3 of the file, or None if
                   there is an issue
         """
         try:
@@ -652,7 +677,7 @@ class WFSSOverlap(Tk.Frame):
         Parameters
         ----------
 
-        forward:   a Boolean value for whether to offset forwards; if False, 
+        forward:   a Boolean value for whether to offset forwards; if False,
                    go backwards
 
         Returns
@@ -703,8 +728,8 @@ class WFSSOverlap(Tk.Frame):
         angstep = float(self.angle_step_entry.get())
         nsteps = int((angmax - angmin)/angstep)
         for loop in range(nsteps):
-            self.run_step()
-            if (loop > 0):
+            self.run_step(True)
+            if loop > 0:
                 newang = self.anglevar.get()+angstep
                 if newang > angmax:
                     return

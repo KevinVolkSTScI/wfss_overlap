@@ -9,17 +9,17 @@ save_png_figure:   save a plot to a PNG file
 
 save_ps_figure:    save a plot to a postscipt file
 
-hybrid_transform:   apply an IRAF style hybrid logarithmic transformation to 
+hybrid_transform:   apply an IRAF style hybrid logarithmic transformation to
                     data values
 
-inverse_hybrid_transform:   apply the inverse of the hubrid logarithmic 
+inverse_hybrid_transform:   apply the inverse of the hubrid logarithmic
                             transformation to a data value
 
 hybrid_labels:   generate plot labels for the hybrid logarithmic case
 
 parse_data_input_text:   parse a set of input lines to extract data values
 
-slope_calculation:  carry out a standard least squares data fit to (x, y) 
+slope_calculation:  carry out a standard least squares data fit to (x, y)
                     values
 
 list_polynomial_fitpars:   write data fit parameters to a file
@@ -32,22 +32,22 @@ separator_line:   make Tkinter separator line object
 
 put_yes_no:  make a Tkinter two choice radio button object
 
-add_yes_no_field:   utility routine to add a yes/no radio button and return the 
+add_yes_no_field:   utility routine to add a yes/no radio button and return the
                     associated Tkinter int variable (1 for yes, 0 for no)
 
 put_message:   append a string to a scrolled text box or text box
 
-range_check:   given an angle in degrees, return the equivalent angle in the 
+range_check:   given an angle in degrees, return the equivalent angle in the
                primary range 0 to 360 degrees
 
 """
 
 import math
-import numpy
-import matplotlib
+# import matplotlib
 import tkinter as Tk
 import tkinter.filedialog
-from astropy.io import fits as fits
+import numpy
+from astropy.io import fits
 
 def get_subimage(image, zoom):
     """
@@ -75,19 +75,20 @@ def get_subimage(image, zoom):
         sh1 = image.shape
     except AttributeError:
         return image
-    if (zoom[0] <= 1) or (zoom[1] < 0) or (zoom[2] < 0) or \
-       (zoom[1] >= sh1[1]) or (zoom[2] >= sh1[0]) or (len(sh1) != 2):
+    if (zoom[0] <= 1) or (zoom[1] < 0) or (zoom[2] < 0):
         return image
-    else:
-        npixelx = sh1[1] // zoom[0]
-        npixely = sh1[0] // zoom[0]
-        if npixely == 0:
-            npixelx = 1
-        if npixely == 0:
-            npixely = 1
-        subimage = numpy.copy(image[
-            zoom[2]:zoom[2]+npixely, zoom[1]:zoom[1]+npixelx])
-        return subimage
+    if (zoom[1] >= sh1[1]) or (zoom[2] >= sh1[0]) or (len(sh1) != 2):
+        return image
+    #
+    npixelx = sh1[1] // zoom[0]
+    npixely = sh1[0] // zoom[0]
+    if npixely == 0:
+        npixelx = 1
+    if npixely == 0:
+        npixely = 1
+    subimage = numpy.copy(image[
+        zoom[2]:zoom[2]+npixely, zoom[1]:zoom[1]+npixelx])
+    return subimage
 
 
 def save_data_set_values(xvalues, yvalues, labelstring=None):
@@ -481,7 +482,7 @@ def list_polynomial_fitpars(fit_type, fit_order, fitpars,
 
     fitpars : numpy float array, the fit parameters
 
-    filename : an optional string variable that gives the file name for the 
+    filename : an optional string variable that gives the file name for the
                output; default is "fit_values.txt"
 
     Returns
@@ -534,7 +535,7 @@ def line_range(lines, ind1, comment_flag='#'):
     return len(lines)
 
 
-def round_float(plotgui, value, minimum_flag):
+def round_float(value, minimum_flag):
     """
     Round a floating point value to the nearest significant figure.
 
@@ -609,7 +610,7 @@ def round_float(plotgui, value, minimum_flag):
     # for matplotlib plots because of symbols close to the edges of
     # the plot.
     ratio = abs(value/rounded_value)
-    if (ratio > 0.97) and (ratio < 1.03):
+    if abs(ratio-1.) < 0.03:
         if (minimum_flag) and sign > 0.:
             rounded_value = (x-delx)*shift*sign
         elif (minimum_flag) and sign < 0.:
@@ -674,9 +675,9 @@ def separator_line(parent, w1, h1, pad, flag, packvalue=Tk.TOP,
                      Tk.RIGHT, Tk.TOP, or Tk.BOTTOM) with default value
                      of Tk.TOP; if None use the gridvalues
 
-        gridvalues : An optional list of seven grid parameters (row, column, 
-                     rowspan, columnspan, sticky_string, padx, pady) to 
-                     use if the packvalue is None; the first 4 values are 
+        gridvalues : An optional list of seven grid parameters (row, column,
+                     rowspan, columnspan, sticky_string, padx, pady) to
+                     use if the packvalue is None; the first 4 values are
                      integers, the next is a string using Tk for tkinter as in
                      'Tk.E+Tk.W' for example, and the last 2 are integers
 
@@ -778,7 +779,7 @@ def put_message(textbox, outstr):
     Parameters
     ----------
 
-    textbox:   a Tkinter textbox or scrolledtext variable wherein to put the 
+    textbox:   a Tkinter textbox or scrolledtext variable wherein to put the
                message string
 
     outstr:    a string variable, that is appended to the text of textbox
@@ -813,8 +814,21 @@ def range_check(angle):
     return newangle
 
 def save_fits(image):
-    if True:
-#    try:
+    """
+    Save an image as a FITS file
+
+    Parameters
+    ----------
+    image : numpy array
+        A numpy float or integer array, here generally two-dimensional, to 
+        be saved to a FITS file
+
+    Returns
+    -------
+    None.
+
+    """
+    try:
         outfile = tkinter.filedialog.asksaveasfilename(
             filetypes=[('FITS', '*.fits')], title='Output FITS File Name')
         print(outfile)
@@ -824,5 +838,5 @@ def save_fits(image):
             values = outfile.split('/')
             filename = values[-1]
             print('Have saved the current image to: %s.\n' % (filename))
-#    except:
-#        pass
+    except:
+        pass

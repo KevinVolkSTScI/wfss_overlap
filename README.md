@@ -49,4 +49,6 @@ One simply invokes the main code 'wfss_overlap_tool.py' from the command line, w
 NIRISS point source input file, so an example is provided in 'stars_wdfield_combined_allfilters.list'.  This file is for the field of the photometric
 standard WD1657+343, the star being source 158 in the list at sky position RA=254.713015, Dec=34.314677.
 
-The powerpoint presentation file 'wfss_overlap.pptx' in the Box folder shows how to run the tool.
+The powerpoint presentation file 'wfss_overlap.pptx' in the Box folder shows how to run the tool.  Analogous documentation is available in the files 
+wfss_overlap.docx and wfss_overlap.pdf.
+

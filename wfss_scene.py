@@ -3,9 +3,9 @@ The code here takes a scene image and convolves with the NIRISS WFSS "PSF"
 image to produce a simulated dispersed scene.
 """
 import numpy
-import astropy.io.fits as fits
-import scipy.signal as signal
-from numpy.fft import rfftn, irfftn, fftshift, ifftshift
+from astropy.io import fits
+from scipy import signal
+# from numpy.fft import rfftn, irfftn, fftshift, ifftshift
 
 
 def wfss_scene(scene_image, filtername, grismname, x0, y0, path='./'):
@@ -16,18 +16,18 @@ def wfss_scene(scene_image, filtername, grismname, x0, y0, path='./'):
     Parameters
     ----------
 
-    scene_image:  A numpy 2-d image (float) of an imaging scene to disperse. 
+    scene_image:  A numpy 2-d image (float) of an imaging scene to disperse.
                   must be 2322x2322 pixels or larger
 
     filtername:   A string, one of the WFSS blocking filter names
 
     grimsname:    A string, the NIRISS GR150 grism name, either 'GR150R' or
-                  'GR150C' 
+                  'GR150C'
 
-    x0:           An integer value, the lower left corner x pixel value for 
+    x0:           An integer value, the lower left corner x pixel value for
                   the POM image read-out area
 
-    y0:           An integer value, the lower left corner y pixel value for 
+    y0:           An integer value, the lower left corner y pixel value for
                   the POM image read-out area
 
     path:         An optional string value, the path to the WFSS PSF images
@@ -35,10 +35,10 @@ def wfss_scene(scene_image, filtername, grismname, x0, y0, path='./'):
     Returns
     -------
 
-    outimage:     A numpy 2-d image (float) of the dispersed scene; size 
+    outimage:     A numpy 2-d image (float) of the dispersed scene; size
                   2322x2322 pixels, or None if there is an issue
 
-    The scene image is multiplied by the spot mask before the convolution in 
+    The scene image is multiplied by the spot mask before the convolution in
     the area that corresponds to the output pixels.
     """
     grisms = ['GR150R', 'GR150C']
@@ -75,7 +75,7 @@ def wfss_scene(scene_image, filtername, grismname, x0, y0, path='./'):
     field_image[y1:y1+2048, x1:x1+2048] = \
         field_image[y1:y1+2048,x1:x1+2048]*spotmask
     newimage = signal.fftconvolve(field_image, psfimage, mode='same')
-    
+
     # scale by the grism total throughput of 0.8
     newimage = newimage*0.8
     return newimage
