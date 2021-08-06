@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 #
 """
-This code uses matplotlib and numpy to produce a window within which a FITS 
-image can be displayed.  The reason for having this and not using the usual 
-packages already in existence is that I will want specific functions on the 
+This code uses matplotlib and numpy to produce a window within which a FITS
+image can be displayed.  The reason for having this and not using the usual
+packages already in existence is that I will want specific functions on the
 image for data reduction.
 
 Usage:
@@ -18,24 +18,24 @@ In the first case the image name given is loaded (if possible) and displayed.
 
 In the second case the widget comes up and one can read in an image.
 
-Note that if the image is of dimension larger than 2 then the first "plane" 
+Note that if the image is of dimension larger than 2 then the first "plane"
 is used.  There is no mechanism here for using other planes.
 
 """
 import math
 import sys
-import numpy
-import astropy.io.fits as fits
 import tkinter as Tk
 import tkinter.ttk
 import tkinter.filedialog
 import tkinter.simpledialog
 import tkinter.messagebox
-import matplotlib
-import matplotlib.lines as mlines
+import numpy
+from astropy.io import fits
+# import matplotlib
+# import matplotlib.lines as mlines
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from matplotlib.colors import LogNorm
+# from matplotlib.colors import LogNorm
 import matplotlib.pyplot as pyplot
 import general_utilities
 import mpfitexpr
@@ -68,27 +68,42 @@ class ImageGUI(Tk.Frame):
         self.xposition = None
         self.yposition = None
         self.angle = None
+        self.colourBarVariable = None
+        self.showImageAxes = None
+        self.imagePosLabel = None
+        self.imagePosLabelText = None
+        self.mplfig1 = None
+        self.mplsubplot1 = None
+        self.canvas1 = None
+        self.plotFrame = None
+        self.imagename = None
+        self.imagexpos = None
+        self.imageypos = None
+        self.transvalues = None
+        self.p1 = None
+        self.p2 = None
+        self.p3 = None
+        self.yscaleType = None
+        self.imageHistogramLabel = None
+        self.imageHistogramLabelText = None
+        self.rangeType = None
+        self.scaleType = None
+        self.minField = None
+        self.maxField = None
+        self.zsminField = None
+        self.zsmaxField = None
+        self.bin_field = None
+        self.colourScheme = None
+        self.colourLabels = None
+        self.barLabel = None
+        self.colourBar = None
+        self.colouBarVariable = None
         if parent is not None:
             # initialize the window and make the plot area.
             Tk.Frame.__init__(self, parent, args)
             self.root = parent
 
-    def show_plot(self):
-        """
-        This is a wrapper routine to show the plot.
 
-        Parameters
-        ----------
-
-           None
-
-        Returns
-        -------
-
-           None
-        """
-        make_plot.make_plot(self)
-            
     def make_image_window(self):
         """
         Make the main image display window.
@@ -783,7 +798,7 @@ class ImageGUI(Tk.Frame):
         """
         Routine for applying imaging key press events.
 
-        Currently the routine sets the image center at the event position.  
+        Currently the routine sets the image center at the event position.
         This does nothing if the zoom is not applied.
         """
         if (event.xdata is None) or (event.ydata is None):
@@ -793,17 +808,27 @@ class ImageGUI(Tk.Frame):
         if (xpixel is None) or (ypixel is None):
             return
         imshape = self.image.shape
+        if event.key == 'l':
+            yvalues = numpy.squeeze(self.image[ypixel, :])
+            xvalues = numpy.arange(imshape[0])+1
+            self.plotxy(xvalues, yvalues, symbol='-', colour='blue',
+                        xlabel='Column (Pixels)', ylabel='Pixel Value',
+                        title='Line %d' % (ypixel))
+        if event.key == 'c':
+            yvalues = numpy.squeeze(self.image[:, xpixel])
+            xvalues = numpy.arange(imshape[1])+1
+            self.plotxy(xvalues, yvalues, symbol='-', colour='blue',
+                        xlabel='Line (Pixels)', ylabel='Pixel Value',
+                        title='Column %d' % (xpixel))
         if event.key == 'j':
             x0 = xpixel-10
-            if x0 < 0:
-                x0 = 0
+            x0 = max(x0, 0)
             x1 = x0 + 22
             if x1 > imshape[1]:
                 x1 = imshape[1]
                 x0 = x1 - 22
             y0 = ypixel-2
-            if y0 < 0:
-                y0 = 0
+            y0 = max(y0, 0)
             y1 = y0 + 5
             if y1 > imshape[0]:
                 y1 = imshape[0]
@@ -945,7 +970,7 @@ class ImageGUI(Tk.Frame):
         Parameters
         ----------
 
-        getrange:   An optional boolean variable, if True the code resets 
+        getrange:   An optional boolean variable, if True the code resets
                     the display range, default is False.
         """
         if self.image is not None:
@@ -1112,10 +1137,8 @@ class ImageGUI(Tk.Frame):
         if value > 3.:
             newvalue = 3.
         v1 = math.pow(10., newvalue)
-        if v1 < 1.:
-            v1 = 1.
-        if v1 > 1000.:
-            v1 = 1000.
+        v1 = max(v1, 1.0)
+        v1 = min(v1, 1000.0)
         v2 = (v1 - 1.)/999.9
         vout = zmin + (zmax - zmin) * v2
         return vout
@@ -1220,8 +1243,8 @@ class ImageGUI(Tk.Frame):
 
     def plotxy(self, xvalues, yvalues, **parameters):
         """
-        A basic plot routine, for quick use without having to keep looking up the 
-        plot commands; parameters can include "symbol", "title", "xlabel", and 
+        A basic plot routine, for quick use without having to keep looking up the
+        plot commands; parameters can include "symbol", "title", "xlabel", and
         "ylabel".
         """
         pyplot.figure(1)
@@ -1263,4 +1286,3 @@ if __name__ == "__main__":
         imdisp.get_image()
     imdisp.make_image_window()
     root.mainloop()
-
