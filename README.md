@@ -41,7 +41,9 @@ The file 'wfss_overlap_tool.py" is the main program.  It imports the other codes
 'wfss_scene.py'.  If the code is being run in a directory besides the one where the files are, one needs to have that directory in the $PYTHONPATH 
 environment variable.
 
-The codes depend on the following python packages:  sys, os, math, tkinter, numpy.scipy, matplotlib, and astropy.
+The codes depend on the following python packages:  sys, os, math, tkinter, numpy, scipy, matplotlib, pysiaf, and astropy.
+
+Astropy can be found at https://www.astropy.org/.  The pysiaf code is found at https://github.com/spacetelescope/pysiaf.  Note that installation of pysiaf should be done via cloning the github repository as described at the github page, rather than using "pip install pysiaf" because the latter currently gives one an out-of-date version of pysiaf.
 
 # Running The Code
 
