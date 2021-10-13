@@ -5,6 +5,10 @@ The code requires a set of FITS files containing PSF and occulting spot mask ima
 
 https://stsci.app.box.com/folder/140705149002
 
+or 
+
+https://stsci.box.com/s/ih166mw8ded6w0qeiw7znc7xuth7n531
+
 The full list of files needed is:
 
 ```
